@@ -6,5 +6,5 @@
   "workbench.enableExperiments": false,
 
   // The master switch to disable and hide all built-in AI features (Chat, inline edits, Copilot extensions)
-  "chat.disableAIFeatures": true,
+  "chat.disableAIFeatures": false,
 }

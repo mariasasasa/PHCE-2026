@@ -31,16 +31,15 @@ environment works from source code all the way to running firmware on the Pico W
    - Select **Pico W** as the target board.
    - Choose a folder for the project.
    - Create/open the project in VS Code.
-4. Add `stdio_init_all();` as the first step inside main()
-5. Add `printf("Test");` inside while loop in main()
-6. Build the project.
+4. Add a `printf("Test");` statement inside the while loop in main().
+5. Build the project.
    - Use the **Compile / Build** command from the Raspberry Pi Pico extension.
    - Watch the terminal output and make sure the build finishes without errors.
-7. Connect the Pico W to your computer using USB.
-8. Flash the program to the Pico W using the **Run / Flash** command in the
+6. Connect the Pico W to your computer using USB.
+7. Flash the program to the Pico W using the **Run / Flash** command in the
    Raspberry Pi Pico extension or by manually uploading the .uf2 file.
-9. Check the board. The LED should now blink continuously.
-10. Connect the **Debug Probe** (hardware) and open the **Serial Monitor**, then look for the output.
+8. Check the board. The LED should now blink continuously.
+9. Connect the **Debug Probe** (hardware) and open the **Serial Monitor**, then look for the output.
 
 ### Checklist
 - [ ] Blink project created and opened
@@ -52,6 +51,7 @@ environment works from source code all the way to running firmware on the Pico W
 **If the build or flash failed, what was the error and what fixed it?**
 
 > _Answer:_
+I had to install driver, but now it works
 >
 
 ---
@@ -69,9 +69,63 @@ questions:
 
 | # | Question | Answer |
 |---|----------|--------|
-| 1 | Name | |
-| 2 | Purpose | |
-| 3 | Input or output | |
+| 1 | Name |OLED (SDA: GP4, SCL: GP5)|   
+| 2 | Purpose |Displays information |
+| 3 | Input or output |output|
+
+| # | Question | Answer |
+|---|----------|--------|
+| 1 | Name |RGB LED (GP6)|   
+| 2 | Purpose |Show information through colours|
+| 3 | Input or output |output|
+
+| # | Question | Answer |
+|---|----------|--------|
+| 1 | Name |LED-BUTTON (L: GP7, B: GP10)|   
+| 2 | Purpose |B: Sending a signal to the pico, L: Showing an output from the pico|
+| 3 | Input or output |L: output, B: input|
+
+| # | Question | Answer |
+|---|----------|--------|
+| 1 | Name |TEMP.&HUM. (SDA: GP4, SCL: GP5)|   
+| 2 | Purpose |To measure air temperature and humidity|
+| 3 | Input or output |input|
+
+| # | Question | Answer |
+|---|----------|--------|
+| 1 | Name |RELAY(GP12)|   
+| 2 | Purpose |A switch that can be electronically controlled by Pico|
+| 3 | Input or output |output|
+
+| # | Question | Answer |
+|---|----------|--------|
+| 1 | Name |MOTOR DRIVER (SDA: GP4, SCL: GP5)|   
+| 2 | Purpose |A device that allows Pico to safely control a motor.|
+| 3 | Input or output |output|
+
+| # | Question | Answer |
+|---|----------|--------|
+| 1 | Name |WIRELESS(TX: GP0, RX: GP1)|   
+| 2 | Purpose |Wi-Fi allows the Pico to communicate wirelessly with other devices and networks.|
+| 3 | Input or output |input, output|
+
+| # | Question | Answer |
+|---|----------|--------|
+| 1 | Name |BUZZER(GP20)|   
+| 2 | Purpose |Can produce sound if Pico sends a signal.|
+| 3 | Input or output |output|\
+
+| # | Question | Answer |
+|---|----------|--------|
+| 1 | Name |LDR(GP27)|   
+| 2 | Purpose |A light sensor that measure how much light is around.|
+| 3 | Input or output |input|
+
+| # | Question | Answer |
+|---|----------|--------|
+| 1 | Name |POTENTIOMETER(GP26)|   
+| 2 | Purpose |Lets you adjust a variable value, such as brightness or motor speed, by turning a knob.|
+| 3 | Input or output |input|
 
 _Add more blocks as you write._
 
@@ -86,7 +140,7 @@ and translate Morse code is up to you.
 Rules:
 
 - dot = 1 time unit (200ms)
-- dash = 3 time units
+- dash = 3 time units 600ms
 - gap between dot/dash elements within one letter = 1 unit
 - gap between letters = 3 units
 - gap between words = 7 units
@@ -100,4 +154,5 @@ Simply copy the modified .c file(s) containing your solution to the exercise fol
 **Attached file(s):**
 
 > _Filename:_
+blink.c
 >

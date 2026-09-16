@@ -109,8 +109,8 @@ C++ features buy you: `#define` → `constexpr`, `enum` → `enum class`, type s
 
 | Version | `text` | `data` | `bss` | Total Flash (`text`+`data`) | Total RAM (`data`+`bss`) |
 |---|---|---|---|---|---|
-| `c_versions` (C11) | | | | | |
-| `cpp_versions` (C++17) | | | | | |
+| `c_versions` (C11) |12432 |0 |1184 |12432 |1184 |
+| `cpp_versions` (C++17) |12432 |0 |1184 |12432 |1184 |
 
 ### Checklist
 
@@ -128,18 +128,21 @@ instructions run on? What does the `arm-none-eabi` part of the compiler's name t
 Why can the `.elf` file produced on your laptop not simply be executed by Windows?**
 
 > _Answer:_
+Arm CPU architecture will be used. None means no operating system. Eabi means embedded calling convention. The .elf file is built for the Raspberry Pi Pico’s ARM microcontroller, not for the Windows laptop.
 >
 
 **Why did `enum class` require an explicit conversion where the C `enum` did not? What
 went wrong when you passed `LedState::On` to `gpio_put()` without a cast?**
 
 > _Answer:_
+gpio_put() requires a Boolean value: true for HIGH and false for LOW. A traditional C enum behaves like an integer, so LED_ON can be automatically converted to true. However, enum class creates a separate type and prevents automatic conversion, helping catch invalid values at compile time. Therefore, LedState::On must be explicitly converted with static_cast<bool>() before being passed to gpio_put().
 >
 
 **Compare the `text`, `data` and `bss` sizes of your C and C++ versions. Did the C++
 abstractions used here introduce a measurable runtime or memory cost?**
 
 > _Answer:_
+The C and C++ versions are the same sizes because the struct, enum class, and static_cast are resolved at compile time. These abstractions do not normally add runtime or memory overhead here. Any small difference in text, data, or bss would likely come from compiler details rather than the C++ features themselves.
 >
 
 **Attached file(s):**
@@ -200,9 +203,9 @@ levels trade size against speed, and what happens to your functions in the machi
 
 | Flag | `text` | `data` | `bss` | Total Flash (`text`+`data`) | Total RAM (`data`+`bss`) |
 |---|---|---|---|---|---|
-| `-O0` | | | | | |
-| `-O2` | | | | | |
-| `-Os` | | | | | |
+| `-O0` |21564 |0 |1184 |21564 |1184 |
+| `-O2` |11952 |0 |1184 |11952 |1184 |
+| `-Os` |11372 |0 |1180 |11372 |1180 |
 
 ### Checklist
 
@@ -216,6 +219,7 @@ levels trade size against speed, and what happens to your functions in the machi
 used by the program?**
 
 > _Answer:_
+The .elf file contains much more than the raw instructions stored on the Pico. It can include: Debugging information, symbol names, section metadata, relocation information, build information. Some of this information helps tools such as the debugger but is not copied into the Pico’s usable program Flash. Therefore, the file size on disk is not the same as the amount of Flash occupied by the firmware.
 >
 
 **Why was the compiler allowed to remove the entire `waste_time()` loop? Why is a
@@ -223,22 +227,26 @@ software delay loop therefore a bad way to create timing in an embedded program,
 why does `sleep_ms()` not disappear in the same way?**
 
 > _Answer:_
+The loop has no observable effect. It does not modify hardware, memory used later, or a returned value. Therefore, the compiler is allowed to remove it during optimization. A software loop is a poor timing mechanism because its duration depends on compiler optimization, processor speed, interrupts, and generated instructions. sleep_ms() does not disappear because it performs an observable timing operation through the Pico SDK and hardware/system timer.
 >
 
 **What happened to `blink_once()` between `-O0` and `-O2`?**
 
 > _Answer:_
+At -O0, it usually remains as a separate function. At -O2, the compiler may inline it into main(), simplify it, or remove the separate copy. This can make the function difficult or impossible to find as an independent function in the disassembly.
 >
 
 **Why can optimized firmware contain fewer instructions even though the C++ source code
 is exactly the same?**
 
 > _Answer:_
+The compiler understands the meaning of the program rather than blindly translating every source line. It can: Remove unused code, combine calculations, remove unnecessary memory accesses, keep values in registers, inline functions, replace slow sequences with simpler instructions. The source remains unchanged, but the generated machine code becomes more efficient.
 >
 
 **What is `-Os` optimizing for, compared to `-O2`?**
 
 > _Answer:_
+-Os optimizes primarily for small program size. -O2 generally prioritizes good execution speed while still reducing unnecessary code. -Os accepts some possible performance trade-offs to use less Flash.
 >
 
 ---
@@ -390,6 +398,7 @@ Flash vs. RAM, and what optimization does to your debugging experience.
 your finger?**
 
 > _Answer:_
+Before raw was about 897 and after around 889, temp_c was 17-18 C and after 20-21.
 >
 
 **What address did you observe for `main()` when executing from Flash, and what address
@@ -397,6 +406,7 @@ when executing from SRAM? What do the `0x1000....` and `0x2000....` address rang
 you?**
 
 > _Answer:_
+0x10000280 and 0x200001d4. First one indicates that the program was loaded into FLASH, but the second one shows that the program was temporary loaded into RAM.
 >
 
 **Power-cycle the board after the `no_flash` build. Which `BUILD:` line did the Serial
@@ -404,12 +414,17 @@ Monitor print, and why? Why does a RAM-loaded program disappear while the Flash 
 remains? (And why would you ever want to run from RAM?)**
 
 > _Answer:_
+The Serial Monitor should not show the RAM program after power is removed because RAM is volatile. The program disappeared because RAM loses its contents without power. A Flash program remains because Flash is non-volatile.
 >
 
 **What difference did you notice when debugging the optimized (`-O2`) build compared to
 the unoptimized one?**
 
 > _Answer:_
+With -O2, some local variables were shown as <optimized out>, and
+the debugger did not stop on every source line in the same order as
+the -O0 build. The compiler rearranged or removed instructions while
+preserving the program's behavior.
 >
 
 **Attached file(s):**
