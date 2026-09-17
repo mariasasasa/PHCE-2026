@@ -6,5 +6,9 @@
   "workbench.enableExperiments": false,
 
   // The master switch to disable and hide all built-in AI features (Chat, inline edits, Copilot extensions)
-  "chat.disableAIFeatures": false,
+  "chat.disableAIFeatures": true,
+
+  // exercise*/ snippets aren't real projects, so cpptools can't resolve their includes.
+  "C_Cpp.files.exclude": { "**/exercise*/**": true },
+  "C_Cpp.errorSquiggles": "Disabled"
 }
