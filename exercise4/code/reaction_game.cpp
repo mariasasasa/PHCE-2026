@@ -39,10 +39,11 @@ void button_isr(uint gpio, std::uint32_t events)
         return;
     }
 
-    // TODO 1: if round_state.pressed is still false, store the current time
-    //         (time_us_32()) in round_state.stop_us and set round_state.pressed.
-    //         Only the first press of a round counts, so bounce and extra presses
-    //         can't overwrite it.
+    if (!round_state.pressed)
+    {
+        round_state.stop_us = time_us_32();
+        round_state.pressed = true;
+    }
 }
 
 int main()
@@ -79,6 +80,12 @@ int main()
         round_state.pressed = false;
         std::cout << "Get ready..." << std::endl;
         sleep_ms(wait_ms(random_engine));
+
+        if (round_state.pressed)
+        {
+            std::cout << "Too early!" << std::endl;
+            continue;
+        }
 
         // TODO 2 (step 4): if round_state.pressed is already true here, the player
         //                  pressed before the LED lit. Print "Too early!" and

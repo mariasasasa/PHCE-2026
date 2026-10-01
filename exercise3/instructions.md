@@ -96,18 +96,18 @@ it's a good real example of "need more values -> need more bits.")
 
    | Type | Predicted | Measured |
    |---|---|---|
-   | `char` | 1 | |
-   | `int` | | |
-   | `short` | | |
-   | `long` | | |
-   | `long long` | | |
-   | `unsigned int` | | |
-   | `bool` | | |
-   | `float` | | |
-   | `double` | | |
-   | `long double` | | |
-   | `char16_t` | | |
-   | `size_t` | | |
+   | `char` | 1 |1 |
+   | `int` |2 |4 |
+   | `short` |2 | 2|
+   | `long` |4 |4 |
+   | `long long` |8 |8 |
+   | `unsigned int` |2 |4 |
+   | `bool` |1 | 1|
+   | `float` |4 |4 |
+   | `double` |8 | 8|
+   | `long double` |8-16 |8 |
+   | `char16_t` |2 |2 |
+   | `size_t` |8 |4 |
 
 2. Still before touching the board: a fixed-width type, `uint8_t`, from `<cstdint>`
    (already included). The name decodes literally - `u` for unsigned (no negative
@@ -126,8 +126,8 @@ it's a good real example of "need more values -> need more bits.")
 
    | | Predicted | Measured |
    |---|---|---|
-   | `uint8_t` minimum | | |
-   | `uint8_t` maximum | | |
+   | `uint8_t` minimum |0 | |
+   | `uint8_t` maximum |255 |255 |
 
 3. Create a new Pico project `data_types` (C++, **Console over UART**), and copy in
    [`code/data_types.cpp`](code/data_types.cpp). Recall, `stdio_init_all()` and printing
@@ -147,22 +147,23 @@ it's a good real example of "need more values -> need more bits.")
 
 ### Checklist
 
-- [ ] Sizes guessed before building
-- [ ] `print_size()` written and called for every type in Part 1's table
-- [ ] `data_types` builds, runs, and the size table is filled in
-- [ ] `uint8_t` min/max predicted before building, then checked against the output
-- [ ] Output for `number = 256` recorded
+- [x] Sizes guessed before building
+- [x] `print_size()` written and called for every type in Part 1's table
+- [x] `data_types` builds, runs, and the size table is filled in
+- [x] `uint8_t` min/max predicted before building, then checked against the output
+- [x] Output for `number = 256` recorded
 
 **What was printed for `number = 256`, and why?**
 
 > _Answer:_
+> For number = 256 zero was printed, because variable number is of uint8_t type, which can hold only 256 values, but 0 is included the floor is 255. Therefore if i attempt to print a number outside the range it will reset to the beginning and print 0.
 >
 
 **Why does `uint8_t` exist at all, if `int` can already hold every value it can? Give one
 situation where the exact size matters and a plain `int` would be the wrong choice.**
 
 > _Answer:_
->
+> Because uint is unsigned integer which cannot go below zero, which int can. Also it can hold values that require only 8 bits maximum,
 
 **Attached file(s):**
 

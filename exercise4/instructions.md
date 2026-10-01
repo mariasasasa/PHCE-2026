@@ -119,57 +119,57 @@ to check anything.
 
 | Program | Presses made | Presses counted | LED reacted right away? |
 |---|---|---|---|
-| `polling_led_toggle` | 10 | | |
-| `irq_led_toggle` | 10 | | |
+| `polling_led_toggle` | 10 |3 |yes and no |
+| `irq_led_toggle` | 10 |14 |yes |
 
 ### Checklist
 
-- [ ] `polling_led_toggle` builds and runs; 10-press test recorded
-- [ ] `irq_led_toggle` TODO 1 and 2 filled in; 10-press test recorded
-- [ ] TODO 3 filled in; the program still counts correctly
+- [x] `polling_led_toggle` builds and runs; 10-press test recorded
+- [x] `irq_led_toggle` TODO 1 and 2 filled in; 10-press test recorded
+- [x] TODO 3 filled in; the program still counts correctly
 
 **Why did `polling_led_toggle` miss presses? How long does a press have to last to be sure the
 polling version sees it?**
 
 > _Answer:_
->
+>Because it checks every 500ms and a press can happen in a less amount of time so it doesnt get registered. The press has to be at least 500ms long to be sure it is seen.
 
 **In `irq_led_toggle`, the LED reacts at once, but the printed count still shows up late.
 Why?**
 
 > _Answer:_
->
+>The interrupt handles the event immediately, but the human-visible print is delayed until the main loop gets around to it.
 
 **Why is printing kept out of `button_isr()`? What could go wrong if the ISR took, say,
 100 ms?**
 
 > _Answer:_
->
+> the CPU would be blocked from handling other interrupts and other button edges or timer events could be missed - so we should keep ISR as short as possible. 
 
 **`pending_presses` is declared `volatile`. What could the compiler do with the loop in
 `main()` if it wasn't?**
 
 > _Answer:_
->
+>volatile tells the compiler: “This variable can change at any time, even when this code is not directly modifying it." In this program, pending_presses is changed by the interrupt handler, not by the main loop. So if the compiler does not know that, it may think the value is constant and reuse an old value instead of reading the current one. So volatile prevents the compiler from “optimizing it wrong” when data is shared between normal code and an interrupt.
 
 **Describe, step by step, how a press gets lost in `take_pending_presses()` without TODO
 3. Why does the book restore the *saved* interrupt state at the end, instead of simply
 switching interrupts back on?**
 
 > _Answer:_
->
+>Without the critical section in take_pending_presses(), a press can be lost because the main thread reads pending_presses, then is interrupted before it resets the variable, and the ISR increments it again. When the main thread resumes, it sets pending_presses = 0, overwriting the ISR update and effectively deleting the press. This is why the read-and-clear must be atomic: it must happen without an interrupt in between. The reason the code restores the saved interrupt state at the end is that save_and_disable_interrupts() returns the previous interrupt configuration, not just “off,” and the program must restore exactly what was there before the critical section. If it simply re-enabled interrupts, it could accidentally turn them back on even when they were originally disabled, which would break the system’s previous state and could cause other logic errors. In short, the correct pattern is: save the old state, disable interrupts, do the critical update, then restore the saved state exactly.
 
 **Give one example, outside this exercise, where polling is the better choice, and say
 why.**
 
 > _Answer:_
->
+>A good example is a simple button on a product that is checked only once every few milliseconds in a user interface or control loop, where the system is not time-critical and the cost of an interrupt is not worth it. Polling is better there because the logic is simple, there are only a few inputs, and the program already wakes up regularly to do other checks, so adding a dedicated interrupt would add complexity without much benefit.
 
 **Give one example where an interrupt is the only workable choice, and polling would be
 unsafe or useless.**
 
 > _Answer:_
->
+>A good example is a power failure or emergency shutdown detector in a microcontroller system. If the power rail drops suddenly, the CPU must react immediately to save data or switch to backup power; there is no time to wait for a polling loop to notice it later. Polling would be unsafe or useless because the failure could happen between checks, and by the time the code looks again, it may be too late to prevent data loss or damage.
 
 **Attached file(s):**
 
@@ -238,32 +238,32 @@ a second.](img/square-wave.svg)
 
 ### Checklist
 
-- [ ] TODO 1 and 2 filled in; LED blinks from the timer
-- [ ] TODO 3 filled in; melody plays while the LED blinks
+- [x] TODO 1 and 2 filled in; LED blinks from the timer
+- [x] TODO 3 filled in; melody plays while the LED blinks
 
 **The LED and the buzzer use the same `toggle_callback()`. How does it know which pin to
 toggle each time it's called?**
 
 > _Answer:_
->
+>It uses t->user_data: each timer passes a different Toggler* (&led or &buzzer), so the callback toggles that object’s stored pin.
 
 **Why does `add_repeating_timer_ms()` take a `void*` and not a `Toggler*`? What would
 happen if you gave it a pointer to something that isn't a `Toggler`?**
 
 > _Answer:_
->
+>void* makes the timer API generic, so it can pass a pointer to any user-defined data type. The callback casts it back to the expected type, Toggler*. If you passed a pointer to another type, the cast would be invalid and accessing toggler->level or toggler->pin would cause undefined behavior, such as corrupted data or a crash.
 
 **The button in Exercise 1 interrupts the CPU when a pin changes. Nothing changes on a
 pin here, so what triggers the interrupt instead, and what is doing the triggering?**
 
 > _Answer:_
->
+>The repeating timer triggers the interrupt at regular intervals. The Pico’s hardware timer generates the interrupt, and the SDK then calls toggle_callback() each time it fires.
 
 **For the note E4 (330 Hz), what is `half_period_us`, and how many times per second does
 `toggle_callback()` run?**
 
 > _Answer:_
->
+>For E4 at 330 Hz: half_period_us = 1,000,000 / (2 × 330) ≈ 1515 µs. Therefore, toggle_callback() runs about 660 times per second, twice per sound-wave cycle.
 
 **Attached file(s):**
 
@@ -316,13 +316,13 @@ This game is based on Tommy Nielsen's reaction time game from last year's course
 
 | Player | Best of 10 (ms) |
 |---|---|
-| | |
+|Marija |161ms |
 | | |
 
 ### Checklist
 
-- [ ] TODO 1 filled in; the game runs
-- [ ] Early press tried before and after TODO 2
+- [x] TODO 1 filled in; the game runs
+- [x] Early press tried before and after TODO 2
 - [ ] `POLL_MS = 500` tried and compared
 - [ ] Best times recorded and submitted to the form
 
@@ -330,7 +330,7 @@ This game is based on Tommy Nielsen's reaction time game from last year's course
 Session 3, `number = 256`.)**
 
 > _Answer:_
->
+>Before TODO 2 was added, an early button press was treated as a normal reaction. Because the press happened before the LED started, stop_us was smaller than start_us. Subtracting these unsigned values caused underflow, so the program printed a very large reaction time, around 4,294,967 ms. This is similar to uint8_t number = 256, which wraps around and becomes 0.
 
 **Did your reaction times change when `POLL_MS` went from 50 to 500? Did the "noticed"
 lag change? If the stop time were taken in `main()` right after the
@@ -338,20 +338,20 @@ lag change? If the stop time were taken in `main()` right after the
 at `POLL_MS = 50`, and at `500`?**
 
 > _Answer:_
->
+>Reaction times stayed about the same because the ISR records the press immediately. The noticed lag increased from up to 50 ms to up to 500 ms. Recording the time in main() instead could add up to 50 ms of error at POLL_MS = 50, or up to 500 ms at POLL_MS = 500.
 
 **Exercise 1 needed a critical section for `pending_presses`, but `main()` reads
 `round_state` here without one. What is different? (Look at who writes each field, and
 when.)**
 
 > _Answer:_
->
+>pending_presses needs a critical section because both the ISR and main() modify it concurrently. round_state fields are written in separate phases: main() writes start_us, the ISR writes stop_us and sets pressed, and main() clears pressed between rounds before reading the result.
 
 **Name one thing that still makes the measured time differ from your real reaction time,
 even with the ISR.**
 
 > _Answer:_
->
+>The button’s mechanical bounce can make the measured time differ from your real reaction time, because the first electrical edge may occur slightly before or after you actually intended to press.
 
 **Attached file(s):**
 

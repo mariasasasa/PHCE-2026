@@ -32,7 +32,12 @@ namespace
 // the same pointer we gave add_repeating_timer_*() as user_data, in t->user_data.
 bool toggle_callback(repeating_timer_t* t)
 {
+    auto* toggler {static_cast<Toggler*>(t->user_data)};
     // TODO 1: t->user_data is a void*. Turn it back into a Toggler* with static_cast.
+
+    toggler->level = !toggler->level;
+    gpio_put(toggler->pin, toggler->level);
+    ++toggler->toggles;
 
     // TODO 2: through that pointer: flip toggler->level, write it to the pin,
     //         and add 1 to toggler->toggles.
@@ -111,6 +116,9 @@ int main()
 
     while (true)
     {
+        for (const Note& note : MELODY){
+            play_note(note, buzzer);
+        }
         // TODO 3 (step 5): play every note in MELODY, in order, with play_note().
         //                  A range-based for loop fits: for (const Note& note : MELODY)
 

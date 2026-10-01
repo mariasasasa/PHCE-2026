@@ -44,6 +44,10 @@ void button_isr(uint gpio, std::uint32_t events)
     }
     last_press_us = now_us;
 
+    led_on = !led_on;
+    gpio_put(LED_PIN, led_on);
+    ++pending_presses;
+
     // TODO 1: flip led_on, write it to LED_PIN, and add 1 to pending_presses.
 }
 
@@ -51,6 +55,10 @@ void button_isr(uint gpio, std::uint32_t events)
 // Read + reset must not be interrupted: a critical section.
 unsigned int take_pending_presses()
 {
+    const std::uint32_t saved_irq_state {save_and_disable_interrupts()};  // TODO 3 (step 5): save and disable interrupts
+    const unsigned int presses {pending_presses};
+    pending_presses = 0;
+    restore_interrupts(saved_irq_state);
     // TODO 3 (step 5): the ISR can run between the two lines that read and reset
     //                  pending_presses. Turn them into a critical section: call
     //                  save_and_disable_interrupts() before them, keep what it returns,
@@ -72,6 +80,8 @@ int main()
     gpio_init(BUTTON_PIN);
     gpio_set_dir(BUTTON_PIN, GPIO_IN);
     gpio_pull_down(BUTTON_PIN);
+
+    gpio_set_irq_enabled_with_callback(BUTTON_PIN, GPIO_IRQ_EDGE_RISE, true, &button_isr);
 
     // TODO 2: register button_isr() for a rising edge on BUTTON_PIN with
     //         gpio_set_irq_enabled_with_callback(pin, event mask, enabled, callback).
