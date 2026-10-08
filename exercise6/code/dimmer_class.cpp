@@ -24,7 +24,7 @@ class Dimmer
 public:
     // TODO 1: initialize led_pin_, pot_pin_ and level_ with a member initializer list.
     //         level_ starts at 0.
-    Dimmer(std::uint32_t led_pin, std::uint32_t pot_pin)
+    Dimmer(std::uint32_t led_pin, std::uint32_t pot_pin) : led_pin_ {led_pin}, pot_pin_ {pot_pin}, level_ {0}
     {
         adc_init();
         adc_gpio_init(pot_pin_);
@@ -57,6 +57,10 @@ public:
         pwm_set_gpio_level(led_pin_, level_);
         std::cout << "raw " << raw << "  level " << level_ << std::endl;
     }
+    std::uint16_t level() const
+    {
+        return level_;
+    }
 
     // TODO 2: write a member function level() that returns level_.
     //         Make it const: it must not change the object.
@@ -71,6 +75,7 @@ private:
 void print_level(const Dimmer& dimmer)
 {
     // TODO 3: print "last level " and dimmer.level().
+    std::cout << "last level " << dimmer.level() << std::endl;
 }
 
 int main()

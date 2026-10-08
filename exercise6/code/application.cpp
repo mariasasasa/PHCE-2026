@@ -22,7 +22,8 @@ void app::Application::run()
     {
         // TODO 2: read pot_ into raw. Turn raw into a level, like in Exercise 1,
         //         and set it on led_.
-        const std::uint16_t raw {0};
+        const std::uint16_t raw {pot_.read()};
+        led_.set_level(static_cast<std::uint8_t>(raw << ADC_TO_PWM_SHIFT));
 
         std::cout << "raw " << raw << "  level " << led_.level() << std::endl;
 

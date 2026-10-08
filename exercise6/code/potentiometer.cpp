@@ -19,5 +19,6 @@ std::uint16_t hw::Potentiometer::read() const
 {
     // TODO 1: the Pico has one ADC for several pins. Switch it to adc_input_, then read it
     //         and return the value.
-    return 0;
+    adc_select_input(adc_input_);
+    return adc_read();
 }

@@ -9,10 +9,10 @@ constexpr std::uint32_t LED_PIN {7};
 constexpr std::uint32_t POT_PIN {26};             // the potentiometer; GP26 is ADC input 0
 constexpr std::uint32_t POT_ADC_INPUT {0};
 // the PWM counter counts 0 to 255, then starts again
-constexpr std::uint16_t PWM_WRAP {255};
+constexpr std::uint16_t PWM_WRAP {4095};
 // like raw >> 3 in Session 5, Exercise 1: drop the 4 lowest bits,
 // so 0-4095 (12 bits) becomes 0-255 (8 bits)
-constexpr std::uint32_t ADC_TO_PWM_SHIFT {4};
+constexpr std::uint32_t ADC_TO_PWM_SHIFT {0};
 // The pin is high while the counter is below level. The counter stops at PWM_WRAP,
 // so PWM_WRAP + 1 keeps the pin high all the time: fully on.
 constexpr std::uint16_t FULL_ON_LEVEL {PWM_WRAP + 1};
@@ -27,10 +27,13 @@ int main()
     adc_select_input(POT_ADC_INPUT);
 
     // TODO 1: let the PWM hardware drive LED_PIN, instead of normal on/off output.
+    gpio_set_function(LED_PIN, GPIO_FUNC_PWM);
+
 
     const std::uint32_t slice {pwm_gpio_to_slice_num(LED_PIN)};  // the PWM slice that drives LED_PIN
     // TODO 2: make the counter of slice count from 0 to PWM_WRAP (255),
     //         then start again at 0.
+    pwm_set_wrap(slice, PWM_WRAP);
     pwm_set_enabled(slice, true);
 
     std::cout << "pwm_led started. Turn the knob." << std::endl;
@@ -40,7 +43,9 @@ int main()
         const std::uint16_t raw {adc_read()};  // 0 to 4095
         // TODO 3: turn raw (0 to 4095) into level (0 to 255). Use ADC_TO_PWM_SHIFT.
         //         The shift gives an int: static_cast it to std::uint16_t.
-        std::uint16_t level {0};
+        std::uint16_t level {
+            static_cast<std::uint16_t>(raw >> ADC_TO_PWM_SHIFT)
+        };
 
         if (level == PWM_WRAP)  // at PWM_WRAP the pin is still low for one count per period
         {

@@ -65,31 +65,32 @@ That is why `level` prints 256, not 255, with the knob fully right.
 
 | Knob | `raw` | `level` | duty cycle |
 |---|---|---|---|
-| fully left | | | |
-| middle | | | |
-| fully right | | | |
+| fully left |30 |1 |0.3% |
+| middle |2130 |133 |51.9% |
+| fully right |4095 |256 |100% |
 
 ### Checklist
 
-- [ ] TODO 1, 2 and 3 filled in; the knob dims the LED
-- [ ] Table filled in
-- [ ] 12-bit version tried (step 5)
+- [x] TODO 1, 2 and 3 filled in; the knob dims the LED
+- [x] Table filled in
+- [x] 12-bit version tried (step 5)
 
 **Why shift by 4? What would shifting left do?**
 
 > _Answer:_
->
+>The ADC gives a 12-bit value from 0 to 4095 
+The PWM uses an 8-bit range from 0 to 255. Shifting right by 4 removes 4 binary bits. So the knob will give a number between 0 and 255.  
 
 **The system clock runs at 125 MHz. One period is `wrap + 1` counts. How many periods
 per second with `wrap` 255? Could you see it blink?**
 
 > _Answer:_
->
+>125,000,000 / 256 = 488,281.25 periods per second, i couldnt see it blink.
 
 **What changed with 12 bits in step 5? Why?**
 
 > _Answer:_
->
+>The knob now gives a number between 0 and 4095, but the brightness control expects a number between 0 and 255. So most of the time counter number will be less than level, so the led will be on most of the time. 
 
 **Attached file(s):**
 
@@ -139,26 +140,36 @@ parameter names.
 
 ### Checklist
 
-- [ ] TODO 1-3 filled in; the knob dims the LED
-- [ ] Destructor seen: LED off, `Dimmer destroyed` printed
-- [ ] `const` error read (step 5)
-- [ ] Jobs of `Dimmer` listed (step 6)
+- [x] TODO 1-3 filled in; the knob dims the LED
+- [x] Destructor seen: LED off, `Dimmer destroyed` printed
+- [x] `const` error read (step 5)
+- [x] Jobs of `Dimmer` listed (step 6)
 
 **In what order did `Dimmer created`, `Dimmer destroyed` and `main() is done` print?
 Why there?**
 
 > _Answer:_
->
+>created, destroyed, done
+> Dimmer created printed first because the Dimmer object was constructed. Then Dimmer destroyed printed when the inner block ended and the object went out of scope. Finally, main() is done printed after that block. 
 
 **What was the error in step 5? Why does `print_level()` need `level()` to be `const`?**
 
 > _Answer:_
->
+>The error was that print_level() receives the object as a const Dimmer&, but level() was not marked const. C++ therefore would not allow print_level() to call it because a non-const function might change the object. The const promises that level() only reads the object and does not modify it, so it can safely be called through the const reference.
 
 **Which jobs does `Dimmer` do? What goes wrong with a second `Dimmer` on GP27?**
 
 > _Answer:_
->
+>Dimmer has several responsibilities:
+Initializes the ADC hardware.
+Configures its potentiometer pin as an ADC input.
+Selects the ADC channel.
+Configures its LED pin for PWM.
+Reads the potentiometer in update().
+Converts the ADC reading into a PWM brightness level.
+Sets the LED brightness.
+Prints readings.
+Turns its LED off in the destructor. With a second Dimmer using GP27, the ADC input selection becomes shared between both objects. The second object changes the Pico’s selected ADC channel to GP27, so when the first object later reads its potentiometer, it may also read GP27 instead of GP26. Each object must reselect its own ADC channel before reading.
 
 **Attached file(s):**
 
@@ -216,39 +227,45 @@ One folder per namespace is usual; here all files share one, to keep it simple.
 
 ### Checklist
 
-- [ ] All files added; the project builds
-- [ ] TODO 1 and 2 filled in; the knob dims the LED
-- [ ] Namespace error read (step 6)
-- [ ] Reuse question answered (step 7)
+- [x] All files added; the project builds
+- [x] TODO 1 and 2 filled in; the knob dims the LED
+- [x] Namespace error read (step 6)
+- [x] Reuse question answered (step 7)
 
 **Why does `Potentiometer::read()` select its input every time? What would break without
 it, with two pots?**
 
 > _Answer:_
->
+>The Pico has one ADC converter shared by several input pins. Potentiometer::read() selects the correct ADC channel before reading. With two potentiometers, the program must switch to the right channel each time. Without selecting it, the ADC would keep using whichever channel was selected last, so both potentiometers could return the same reading or the wrong potentiometer’s value. 
 
 **What was the first error in step 6? What did the compiler suggest?**
 
 > _Answer:_
->
+>The first error was that PwmLed was not declared in the current scope. The compiler suggested using hw::PwmLed, because the PwmLed class belongs to the hw namespace.
 
 **`ADC_TO_PWM_SHIFT` sits in a namespace without a name in `application.cpp`. Who can use
 it?**
 
 > _Answer:_
->
+>Only code inside application.cpp can use ADC_TO_PWM_SHIFT. An unnamed namespace keeps its contents private to that one source file, so other files such as dimmer_multi.cpp cannot access it directly.
 
 **`MAX_LEVEL` is `static`. How can you write `hw::PwmLed::MAX_LEVEL` without any `PwmLed`
 object? Where could `Application` use it?**
 
 > _Answer:_
->
+>Because MAX_LEVEL is static, it belongs to the PwmLed class itself rather than to individual PwmLed objects. Therefore, it can be accessed through the class name as hw::PwmLed::MAX_LEVEL without creating an object.
+
+> Application could use it when converting the potentiometer reading into a brightness level, for example to limit or compare the calculated level with the maximum brightness supported by the LED.
 
 **For the light-sensor LED, which classes can you reuse as they are? What would you
 change?**
 
 > _Answer:_
->
+>PwmLed can be reused as it is because it only needs an LED pin. Create it with the light-sensor LED’s pin.
+
+> Potentiometer can also be reused as it is because it simply reads an analog input. Create it using the light sensor’s ADC pin, such as GP27.
+
+> Application can mostly be reused because it already reads an analog value and sets LED brightness. For clarity, you could rename Potentiometer to something more general like AnalogInput, and change the application’s behavior if the light sensor should make the LED brighter when it gets darker or lighter.
 
 **Attached file(s):**
 
