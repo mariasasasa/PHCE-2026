@@ -275,13 +275,13 @@ off to save a little power on pins that are unused or carrying an analog signal 
 
    | SDK call | Matching line in `gpio_hal` | Matching line in `gpio_registers` | What does it do? |
    |---|---|---|---|
-   | `gpio_init(LED_PIN)` | | | |
-   | `gpio_set_dir(BUTTON_PIN, GPIO_IN)` | | | |
-   | `gpio_pull_down(BUTTON_PIN)` | | | |
-   | `gpio_set_dir(LED_PIN, GPIO_OUT)` | | | |
-   | `gpio_get(BUTTON_PIN)` | | | |
-   | `gpio_put(LED_PIN, true)` | | | |
-   | `gpio_put(LED_PIN, false)` | | | |
+   | `gpio_init(LED_PIN)` |io_bank0_hw->io[LED_PIN].ctrl = GPIO_FUNC_SIO;    | reg(IO_BANK0_BASE_ADDR + 0x04u + 8u * LED_PIN) = 5u;     |Selects the pin as plain GPIO (SIO), so software can control it. |
+   | `gpio_set_dir(BUTTON_PIN, GPIO_IN)` |pads_bank0_hw->io[BUTTON_PIN] \= PADS_BANK0_GPIO0_IE_BITS; |button_pad \= 1u<<6; |Enables the button pin as an input driver. |
+   | `gpio_pull_down(BUTTON_PIN)` |pads_bank0_hw->io[BUTTON_PIN] \= PADS_BANK0_GPIO0_PDE_BITS; |button_pad \= 1u << 2; |Weakly pulls the pin to GND when the button is not pressed. |
+   | `gpio_set_dir(LED_PIN, GPIO_OUT)` |sio_hw->gpio_oe_set = 1u << LED_PIN; |reg(SIO_BASE_ADDR + 0x024u) = 1u << LED_PIN; |Enables the LED pin as an output driver. |
+   | `gpio_get(BUTTON_PIN)` |bool button_pressed = sio_hw->gpio_in & (1u << BUTTON_PIN); |bool button_pressed = reg(SIO_BASE_ADDR + 0x004u) & (1u << BUTTON_PIN); | Reads the current logic level of the pin.|
+   | `gpio_put(LED_PIN, true)` |if button_pressed true, then sio_hw->gpio_set = 1u << LED_PIN; |if button_pressed true, then reg(SIO_BASE_ADDR + 0x014u) = 1u << LED_PIN; | Drives the pin high (LED on).|
+   | `gpio_put(LED_PIN, false)` |else - sio_hw->gpio_clr = 1u << LED_PIN; |else - reg(SIO_BASE_ADDR + 0x018u) = 1u << LED_PIN; |Drives the pin low (LED off). |
 7. Compare the compiled size of all three projects:
    `arm-none-eabi-size build/<project_name>.elf` (run from each project's folder, or use
    the memory usage summary already printed at the end of a normal build). Fill in the
@@ -289,34 +289,34 @@ off to save a little power on pins that are unused or carrying an analog signal 
 
    | Project | `text` size (bytes) |
    |---|---|
-   | `gpio_sdk` | |
-   | `gpio_hal` | |
-   | `gpio_registers` | |
+   | `gpio_sdk` |10676 |
+   | `gpio_hal` |10604 |
+   | `gpio_registers` |10644 |
 
 ### Checklist
 
-- [ ] `gpio_sdk` builds and runs; button press lights the LED
-- [ ] `gpio_hal` builds and runs with identical behavior
-- [ ] `gpio_registers` builds and runs with identical behavior
-- [ ] SDK-to-HAL-to-register table filled in
-- [ ] Compiled `text` size compared across all three
+- [x] `gpio_sdk` builds and runs; button press lights the LED
+- [x] `gpio_hal` builds and runs with identical behavior
+- [x] `gpio_registers` builds and runs with identical behavior
+- [x] SDK-to-HAL-to-register table filled in
+- [x] Compiled `text` size compared across all three
 
 **The button is configured with a pull-down resistor. What logic level does the input read when the button is released and when it is pressed? How would this change if a pull-up resistor were used instead?**
 
 > _Answer:_
->
+>With a pull-down resistor, the input reads LOW (0) when the button is released because the resistor holds the pin at ground, and it reads HIGH (1) when the button is pressed because the button connects the pin to 3.3 V. With a pull-up resistor, this is reversed: the input reads HIGH (1) when the button is released because the resistor holds the pin at 3.3 V, and it reads LOW (0) when the button is pressed because the button connects the pin to ground.
 
 **Did the three projects' compiled sizes actually match how different the source code
 looks, or were they closer/further apart than you expected? Why might that be?**
 
 > _Answer:_
->
+>The compiled sizes were much closer than the source code differences suggested. gpio_sdk was 10,676 bytes, gpio_hal was 10,604 bytes, and gpio_registers was 10,644 bytes, so the largest difference was only 72 bytes. This is because the compiler can optimize the SDK and HAL code, and all three projects use the same underlying hardware operations and supporting Pico libraries. The direct-register version is not automatically the smallest because its extra address calculations and code can also affect the final binary size.
 
 **When would you reach for direct register access instead of the SDK, and when is the
 SDK clearly the better choice? Where would the HAL level (`gpio_hal.cpp`) fit in?**
 
 > _Answer:_
->
+>I would use direct register access when I need very precise control over the hardware, the fastest possible execution, or access to a feature that the SDK does not provide. It can also be useful when studying the microcontroller or debugging how the hardware works, but it is easier to make mistakes because the code depends on specific addresses, offsets, and bit positions. The SDK is clearly the better choice for most normal applications because it is easier to read, safer, more portable, and less dependent on the details of one particular microcontroller. The HAL level fits between the SDK and direct register access: it hides some of the raw addresses and bit manipulations behind named hardware structures, while still giving more control and showing more clearly how the SDK operates.
 
 **`gpio_registers.cpp`/`gpio_hal.cpp` clear the `PUE` bit and set the `PDE` bit for the
 button pin (pull-down). What third combination of those two bits is possible, and what
@@ -324,7 +324,7 @@ would it mean electrically for a button input if neither pull-up nor pull-down w
 enabled?**
 
 > _Answer:_
->
+>The third useful combination is to set the PUE bit and clear the PDE bit, which enables a pull-up resistor instead of a pull-down. Electrically, the released button would read HIGH because the resistor holds the input at 3.3 V, while pressing the button would connect it to ground and make it read LOW. If both PUE and PDE were cleared, neither resistor would be enabled, so the input would be floating when the button was released. It could then pick up electrical noise and unpredictably read HIGH or LOW.
 
 **Attached file(s):**
 
